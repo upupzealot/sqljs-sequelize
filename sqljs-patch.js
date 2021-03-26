@@ -1,3 +1,5 @@
+const _ = require('lodash');
+const fs = require('fs');
 const initSqlJs = require('sql.js');
 
 const expo = {
@@ -9,11 +11,30 @@ const expo = {
     SQL._Database = SQL.Database;
     SQL.Database = class Db extends SQL._Database {
       constructor(filename, mode, cb) {
-        super();
+        if(fs.existsSync(filename)) {
+          const buffer = fs.readFileSync(filename);
+          super(buffer, mode);
+        } else {
+          super();
+        }
+
+        this._filename = filename;
+        this.write = _.debounce(()=>{
+          try {
+            const data = this.export();
+            const buffer = Buffer.from(data);
+            fs.writeFileSync(this._filename, buffer);
+          } catch (err) {
+            console.error('sync sqlite failed');
+            throw(err);
+          }
+        }, 100);
+        
         process.nextTick(cb, null);
       }
       serialize(cb) {
-        process.nextTick(cb);
+        this.write();
+        process.nextTick(cb, null);
       }
       run(sql, params, cb) {
         super.run(sql, params);

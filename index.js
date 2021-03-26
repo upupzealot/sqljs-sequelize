@@ -17,14 +17,11 @@ const path = require('path');
     birthday: Sequelize.DATE
   });
 
-  sequelize.sync().then(function() {
-    return User.create({
-      username: 'janedoe',
-      birthday: new Date(1980, 6, 20)
-    });
-  }).then(function(jane) {
-    console.log(jane.get({
-      plain: true
-    }));
+  await sequelize.sync();
+  await User.create({
+    username: 'janedoe',
+    birthday: new Date(1980, 6, 20)
   });
+  const count = await User.count();
+  console.log(count)
 })();
